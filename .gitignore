@@ -1,0 +1,5 @@
+node_modules
+dist
+weppy-project-sync
+*.log
+.DS_Store
