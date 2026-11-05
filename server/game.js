@@ -397,6 +397,24 @@ export class Game {
     return view;
   }
 
+  summary() {
+    const st = this.standings();
+    let connected = 0;
+    for (const p of this.players.values()) if (p.connected) connected++;
+    return {
+      pin: this.pin,
+      title: this.quiz.title,
+      phase: this.phase,
+      question: this.index >= 0 ? this.index + 1 : 0,
+      totalQuestions: this.quiz.questions.length,
+      players: this.players.size,
+      connectedPlayers: connected,
+      locked: this.locked,
+      hostConnected: !!this.hostSocketId,
+      top: st.list.slice(0, 3).map(p => ({ name: p.name, score: p.score })),
+    };
+  }
+
   broadcast() {
     if (this.destroyed) return;
     const st = this.standings();

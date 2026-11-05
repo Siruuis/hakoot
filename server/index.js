@@ -2,20 +2,23 @@ import crypto from 'node:crypto';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { Server } from 'socket.io';
+import { config } from './config.js';
 import { Game } from './game.js';
+import { QuizStore } from './store.js';
+import { apiRouter } from './api.js';
+import { mcpRouter } from './mcp-http.js';
 import { validateQuiz } from '../shared/quiz.js';
 
-const PORT = Number(process.env.PORT) || 3000;
 const IDLE_MS = 3 * 60 * 60 * 1000;
-const dist = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 
 const app = express();
+app.disable('x-powered-by');
 const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 1e6, pingInterval: 10000, pingTimeout: 8000 });
 const games = new Map();
+const store = new QuizStore(config.dataDir);
 
 function addressRank(ip) {
   if (ip.startsWith('192.168.137.')) return 2;
@@ -33,11 +36,12 @@ function lanAddresses() {
     .sort((a, b) => addressRank(a) - addressRank(b));
 }
 
-app.get('/api/network', (req, res) => res.json({ addresses: lanAddresses() }));
-app.use(express.static(dist));
+app.use('/api', apiRouter({ store, games, lanAddresses }));
+app.use('/mcp', mcpRouter({ store, games }));
+app.use(express.static(config.dist));
 app.use((req, res) => {
   if (req.method !== 'GET') return res.sendStatus(404);
-  res.sendFile(path.join(dist, 'index.html'), err => {
+  res.sendFile(path.join(config.dist, 'index.html'), err => {
     if (err && !res.headersSent) res.status(500).send('Lance "npm run build" avant "npm start".');
   });
 });
@@ -182,7 +186,18 @@ setInterval(() => {
   for (const game of games.values()) if (game.touchedAt < limit) game.destroy('Partie expirée');
 }, 5 * 60 * 1000).unref();
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Hakoot sur http://localhost:${PORT}`);
-  for (const ip of lanAddresses()) console.log(`Réseau local : http://${ip}:${PORT}`);
+server.listen(config.port, '0.0.0.0', () => {
+  const { port } = server.address();
+  console.log(`Hakoot v${config.version} sur http://localhost:${port}`);
+  for (const ip of lanAddresses()) console.log(`Réseau local : http://${ip}:${port}`);
+  console.log(`API : ${config.apiKey ? 'clé API active' : 'locale uniquement (HAKOOT_API_KEY non défini)'} · MCP : http://localhost:${port}/mcp`);
 });
+
+const shutdown = () => {
+  for (const game of games.values()) game.destroy('Le serveur a été arrêté');
+  io.close();
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 2000).unref();
+};
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

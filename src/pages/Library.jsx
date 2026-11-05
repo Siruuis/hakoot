@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createQuiz, deleteQuiz, loadQuizzes } from '../storage.js';
 import { validateQuiz } from '../../shared/quiz.js';
 import { useLaunch } from '../hooks.js';
+import { api } from '../api.js';
 import { download, plural, slug } from '../utils.js';
 import { Backdrop, Logo } from '../components/ui.jsx';
 
@@ -12,8 +13,48 @@ export default function Library() {
   const [error, setError] = useState('');
   const { launch, busy } = useLaunch();
   const fileRef = useRef(null);
+  const [serverQuizzes, setServerQuizzes] = useState(null);
 
   const refresh = () => setQuizzes(loadQuizzes());
+
+  const loadServer = async () => {
+    const res = await api('/quizzes');
+    setServerQuizzes(res.ok ? res.quizzes : null);
+  };
+
+  useEffect(() => {
+    loadServer();
+  }, []);
+
+  const fetchServerQuiz = async item => {
+    const res = await api(`/quizzes/${encodeURIComponent(item.id)}`);
+    if (!res.ok) {
+      setError(res.error);
+      loadServer();
+      return null;
+    }
+    return res.quiz;
+  };
+
+  const playServer = async item => {
+    setError('');
+    const quiz = await fetchServerQuiz(item);
+    if (quiz) play(quiz);
+  };
+
+  const copyServer = async item => {
+    const quiz = await fetchServerQuiz(item);
+    if (!quiz) return;
+    createQuiz({ title: quiz.title, description: quiz.description, questions: quiz.questions });
+    refresh();
+  };
+
+  const removeServer = async item => {
+    if (!window.confirm(`Supprimer « ${item.title} » du serveur ?`)) return;
+    const res = await api(`/quizzes/${encodeURIComponent(item.id)}`, { method: 'DELETE' });
+    if (!res.ok) setError(res.error);
+    loadServer();
+  };
 
   const create = () => navigate(`/create/${createQuiz({ questions: [] }).id}`);
 
@@ -126,6 +167,56 @@ export default function Library() {
               );
             })}
           </div>
+        )}
+
+        {serverQuizzes && (
+          <>
+            <div className="section-head">
+              <h2 className="page-title small-title">Quiz du serveur</h2>
+              <span className="api-badge">API · MCP</span>
+              <button className="btn ghost small-btn" onClick={loadServer}>
+                Actualiser
+              </button>
+            </div>
+            {serverQuizzes.length === 0 ? (
+              <div className="card hint">
+                <p>
+                  Les quiz créés par l'API ou par une IA (via MCP) apparaissent ici. Demande par exemple à Claude :{' '}
+                  <strong>« Crée un quiz Hakoot de 10 questions sur l'espace »</strong>.
+                </p>
+                <a className="link" href="https://github.com/Siruuis/hakoot/blob/main/docs/API.md" target="_blank" rel="noreferrer">
+                  Configurer l'API et le MCP →
+                </a>
+              </div>
+            ) : (
+              <div className="quiz-grid">
+                {serverQuizzes.map(item => (
+                  <article key={item.id} className="quiz-card server">
+                    <div className="quiz-card-body">
+                      <h3>{item.title}</h3>
+                      {item.description && <p className="muted small">{item.description}</p>}
+                      <p className="muted small">
+                        {plural(item.questionCount, 'question')} · modifié le {new Date(item.updatedAt).toLocaleDateString('fr-FR')}
+                      </p>
+                    </div>
+                    <div className="quiz-card-actions">
+                      <button className="btn primary" disabled={busy} onClick={() => playServer(item)}>
+                        ▶ Lancer
+                      </button>
+                      <button className="btn ghost" onClick={() => copyServer(item)}>
+                        Copier dans mes quiz
+                      </button>
+                      <div className="row small-actions">
+                        <button className="link danger" onClick={() => removeServer(item)}>
+                          Supprimer du serveur
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

@@ -2093,3 +2093,34 @@ button.answer:active:not(:disabled) {
     display: none;
   }
 }
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.small-title {
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.api-badge {
+  background: var(--ink);
+  color: var(--sun);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  rotate: -3deg;
+}
+
+.card.hint {
+  max-width: 720px;
+}
+
+.quiz-card.server .quiz-card-body {
+  border-top-color: var(--ink);
+  background-image: repeating-linear-gradient(135deg, transparent 0 14px, rgba(17, 17, 17, 0.04) 14px 28px);
+}

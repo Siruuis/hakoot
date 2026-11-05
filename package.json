@@ -1,12 +1,17 @@
 {
   "name": "hakoot",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Le quiz multijoueur qui fait du bruit. Open source, auto-hébergé, en temps réel.",
   "scripts": {
     "dev": "concurrently -k -n server,client -c cyan,magenta \"node --watch server/index.js\" \"vite\"",
     "build": "vite build",
     "start": "node server/index.js",
-    "test": "node test/e2e.js"
+    "test": "node scripts/test.js",
+    "test:unit": "node scripts/test.js unit",
+    "test:integration": "node scripts/test.js integration",
+    "test:ui": "node scripts/test.js ui",
+    "key": "node scripts/api-key.js",
+    "mcp": "node mcp/stdio.js"
   },
   "keywords": [
     "quiz",
@@ -18,13 +23,16 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "express": "^5.3.0",
-    "socket.io": "^4.8.4"
+    "socket.io": "^4.8.4",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@vitejs/plugin-react": "^6.2.1",
     "concurrently": "^10.0.6",
+    "puppeteer-core": "^25.16.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

@@ -1,5 +1,8 @@
 node_modules
 dist
+data
+release
+.env
 weppy-project-sync
 *.log
 .DS_Store

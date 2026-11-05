@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "hakoot": {
+      "type": "http",
+      "url": "${HAKOOT_URL:-http://localhost:3000}/mcp",
+      "headers": {
+        "Authorization": "Bearer ${HAKOOT_API_KEY:-}"
+      }
+    }
+  }
+}

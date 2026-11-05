@@ -6,6 +6,7 @@ import Play from './pages/Play.jsx';
 import Library from './pages/Library.jsx';
 import Editor from './pages/Editor.jsx';
 import Host from './pages/Host.jsx';
+import Launch from './pages/Launch.jsx';
 import '@fontsource-variable/bricolage-grotesque';
 import './styles.css';
 
@@ -18,6 +19,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/create" element={<Library />} />
         <Route path="/create/:id" element={<Editor />} />
         <Route path="/host" element={<Host />} />
+        <Route path="/launch/:id" element={<Launch />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
